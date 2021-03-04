@@ -277,6 +277,7 @@ void Ogre2ParticleEmitter::SetMaterial(const MaterialPtr &_material)
 
   auto ogreMaterial = std::dynamic_pointer_cast<Ogre2Material>(_material);
   ogreMaterial->FillUnlitDatablock(this->dataPtr->ogreDatablock);
+
   this->material = _material;
 }
 
@@ -285,7 +286,6 @@ void Ogre2ParticleEmitter::SetVelocityRange(double _minVelocity,
     double _maxVelocity)
 {
   this->dataPtr->emitter->setParticleVelocity(_minVelocity, _maxVelocity);
-
 
   this->minVelocity = _minVelocity;
   this->maxVelocity = _maxVelocity;
@@ -501,6 +501,7 @@ void Ogre2ParticleEmitter::CreateParticleSystem()
   auto ogreMat = std::dynamic_pointer_cast<Ogre2Material>(
       this->dataPtr->materialUnlit);
   this->dataPtr->ogreDatablock = ogreMat->UnlitDatablock();
+
   this->dataPtr->ps->setMaterialName(
       *(this->dataPtr->ogreDatablock->getNameStr()));
 

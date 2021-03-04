@@ -606,7 +606,7 @@ void DepthCameraTest::DepthCameraParticles(
     emitter->SetRate(100);
     emitter->SetLifetime(2);
     emitter->SetVelocityRange(0.1, 0.1);
-    emitter->SetScaleRate(0.2);
+    emitter->SetScaleRate(0.1);
     emitter->SetColorRange(ignition::math::Color::Red,
         ignition::math::Color::Black);
     emitter->SetEmitting(true);
@@ -628,9 +628,8 @@ void DepthCameraTest::DepthCameraParticles(
     double depthParticleAvg = 0.0;
 
     // set a larger tol for particle depth
-    // tol is particle size + 4 sigma of noise stddev
-    double noiseStddev = 0.01;
-    double depthNoiseTol = particleSize.X() + 4 * noiseStddev;;
+    // depth noise is computed based on particle size
+    double depthNoiseTol = particleSize.X() + particleSize.X() * 0.5;
     double expectedParticleDepth = particlePosition.X();
 
     // Verify depth and point cloud data after particle effects

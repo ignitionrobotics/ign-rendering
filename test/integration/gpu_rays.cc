@@ -571,7 +571,7 @@ void GpuRaysTest::RaysParticles(const std::string &_renderEngine)
   emitter->SetRate(100);
   emitter->SetLifetime(2);
   emitter->SetVelocityRange(0.1, 0.1);
-  emitter->SetScaleRate(0.2);
+  emitter->SetScaleRate(0.1);
   emitter->SetColorRange(ignition::math::Color::Red,
       ignition::math::Color::Black);
   emitter->SetEmitting(true);
@@ -597,7 +597,8 @@ void GpuRaysTest::RaysParticles(const std::string &_renderEngine)
       abs(box02Pose.Pos().Y()) - unitBoxSize / 2;
 
   // set a larger tol for particle range
-  double laserNoiseTol = particleSize.X();
+  // depth noise is computed based on particle size
+  double laserNoiseTol = particleSize.X() + particleSize.X() * 0.5;
   double expectedParticleRange = particlePosition.X();
 
   // update 100 frames. There should be a descent chance that we will see both
@@ -628,10 +629,10 @@ void GpuRaysTest::RaysParticles(const std::string &_renderEngine)
     EXPECT_DOUBLE_EQ(ignition::math::INF_D, scan[last]);
   }
 
-  // particles are sparse so there should be more misses than hits
-  EXPECT_GT(particleMissCount, particleHitCount);
   // there should be at least one hit
   EXPECT_GT(particleHitCount, 0u);
+  // there should be at least one miss
+  EXPECT_GT(particleMissCount, 0u);
 
   c.reset();
 

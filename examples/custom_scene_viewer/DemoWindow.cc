@@ -15,10 +15,11 @@
  *
  */
 
-#if defined(__APPLE__)
+#if __APPLE__
   #include <OpenGL/gl.h>
+  #include <OpenGL/OpenGL.h>
   #include <GLUT/glut.h>
-#elif !defined(_WIN32)
+#else
   #include <GL/glew.h>
   #include <GL/gl.h>
   #include <GL/glut.h>
@@ -52,7 +53,11 @@ unsigned int imgh = 0;
 
 bool g_initContext = false;
 
-#if not (__APPLE__ || _WIN32)
+#if __APPLE__
+  CGLContextObj g_context;
+  CGLContextObj g_glutContext;
+#elif _WIN32
+#else
   GLXContext g_context;
   Display *g_display;
   GLXDrawable g_drawable;
@@ -159,7 +164,10 @@ void printFPS()
 //////////////////////////////////////////////////
 void displayCB()
 {
-#if not (__APPLE__ || _WIN32)
+#if __APPLE__
+  CGLSetCurrentContext(g_context);
+#elif _WIN32
+#else
   if (g_display)
   {
     glXMakeCurrent(g_display, g_drawable, g_context);
@@ -171,7 +179,10 @@ void displayCB()
 
   camera->Capture(*g_image);
 
-#if not (__APPLE__ || _WIN32)
+#if __APPLE__
+  CGLSetCurrentContext(g_glutContext);
+#elif _WIN32
+#else
   glXMakeCurrent(g_glutDisplay, g_glutDrawable, g_glutContext);
 #endif
 
@@ -198,7 +209,10 @@ void idleCB()
 //////////////////////////////////////////////////
 void keyboardCB(unsigned char _key, int, int)
 {
-#if not (__APPLE__ || _WIN32)
+#if __APPLE__
+    CGLSetCurrentContext(g_context);
+#elif _WIN32
+#else
   if (g_display)
   {
     glXMakeCurrent(g_display, g_drawable, g_context);
@@ -241,7 +255,10 @@ void keyboardCB(unsigned char _key, int, int)
     g_demo->SelectScene(index);
   }
 
-#if not (__APPLE__ || _WIN32)
+#if __APPLE__
+  CGLSetCurrentContext(g_glutContext);
+#elif _WIN32
+#else
   glXMakeCurrent(g_glutDisplay, g_glutDrawable, g_glutContext);
 #endif
 }
@@ -259,9 +276,6 @@ void initCamera(CameraPtr _camera)
 //////////////////////////////////////////////////
 void initContext()
 {
-  int argc = 0;
-  char **argv = 0;
-  glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_DOUBLE);
   glutInitWindowPosition(0, 0);
   glutInitWindowSize(imgw, imgh);
@@ -278,6 +292,9 @@ void initContext()
 //////////////////////////////////////////////////
 void run(ManualSceneDemoPtr _demo)
 {
+#if __APPLE__
+  g_context = CGLGetCurrentContext();
+#endif
 #if not (__APPLE__ || _WIN32)
   g_context = glXGetCurrentContext();
   g_display = glXGetCurrentDisplay();
@@ -290,6 +307,9 @@ void run(ManualSceneDemoPtr _demo)
   initContext();
   printUsage();
 
+#if __APPLE__
+  g_glutContext = CGLGetCurrentContext();
+#endif
 #if not (__APPLE__ || _WIN32)
   g_glutDisplay = glXGetCurrentDisplay();
   g_glutDrawable = glXGetCurrentDrawable();

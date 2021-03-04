@@ -50,7 +50,7 @@ class ignition::rendering::OgreGpuRaysPrivate
   /// \brief Pointer to Ogre material for the first rendering pass.
   public: Ogre::Material *matFirstPass = nullptr;
 
-  /// \brief Pointer to Ogre material for the sencod rendering pass.
+  /// \brief Pointer to Ogre material for the second rendering pass.
   public: Ogre::Material *matSecondPass = nullptr;
 
   /// \brief Temporary pointer to the current material.

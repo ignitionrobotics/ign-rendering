@@ -103,7 +103,6 @@ void buildScene(ScenePtr _scene)
   particleMaterial->SetDiffuse(0.7, 0.7, 0.7);
   particleMaterial->SetTexture(RESOURCE_PATH + "/smoke.png");
   particleMaterial->SetAlphaFromTexture(true);
-  particleMaterial->SetDepthWriteEnabled(false);
 
   //! [create particle emitter]
   ParticleEmitterPtr emitter = _scene->CreateParticleEmitter();

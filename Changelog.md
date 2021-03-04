@@ -12,6 +12,14 @@
 
 ### Ignition Rendering 4.X
 
+### Ignition Rendering 4.6.0 (2021-03-01)
+
+1. Improve particle scattering noise
+    * [Pull Request #261](https://github.com/ignitionrobotics/ign-rendering/pull/261)
+
+1. Fix custom_scene_viewer for macOS
+    * [Pull Request #256](https://github.com/ignitionrobotics/ign-rendering/pull/256)
+
 ### Ignition Rendering 4.5.0 (2021-02-17)
 
 1. More verbose messages when failing to load render engines

@@ -14,6 +14,16 @@
  * limitations under the License.
  *
  */
+
+#if defined(__APPLE__)
+  #include <OpenGL/gl.h>
+  #include <GLUT/glut.h>
+#elif not defined(_WIN32)
+  #include <GL/glew.h>
+  #include <GL/gl.h>
+  #include <GL/glut.h>
+#endif
+
 #include <iostream>
 #include <ignition/common/Console.hh>
 #include "ManualSceneDemo.hh"
@@ -169,8 +179,18 @@ void ManualSceneDemo::ChangeScene()
 
 //////////////////////////////////////////////////
 //////////////////////////////////////////////////
-int main(int, char**)
+int main(int _argc, char** _argv)
 {
+  glutInit(&_argc, _argv);
+
+  // Expose engine name to command line because we can't instantiate both
+  // ogre and ogre2 at the same time
+  std::string ogreEngine("ogre");
+  if (_argc > 1)
+  {
+    ogreEngine = _argv[1];
+  }
+
   common::Console::SetVerbosity(4);
 //! [add scenes]
   ManualSceneDemoPtr sceneDemo(new ManualSceneDemo);
@@ -188,8 +208,9 @@ int main(int, char**)
   sceneDemo->AddScene(SceneBuilderPtr(new ShadowSceneBuilder(4)));
   sceneDemo->AddScene(SceneBuilderPtr(new ShadowSceneBuilder(5)));
 //! [add scenes]
-  sceneDemo->AddCamera("ogre");
+  sceneDemo->AddCamera(ogreEngine);
   sceneDemo->AddCamera("optix");
   sceneDemo->Run();
   return 0;
 }
+
