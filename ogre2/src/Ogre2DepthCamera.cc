@@ -639,7 +639,7 @@ void Ogre2DepthCamera::CreateDepthTexture()
     depthTexDef->uav = false;
     depthTexDef->automipmaps = false;
     depthTexDef->hwGammaWrite = Ogre::TextureDefinitionBase::BoolFalse;
-    depthTexDef->depthBufferId = Ogre::DepthBuffer::POOL_DEFAULT;
+    depthTexDef->depthBufferId = Ogre::DepthBuffer::POOL_NON_SHAREABLE;
     depthTexDef->depthBufferFormat = Ogre::PF_UNKNOWN;
     depthTexDef->fsaaExplicitResolve = false;
 
@@ -661,8 +661,8 @@ void Ogre2DepthCamera::CreateDepthTexture()
     // gamma correction in the fragment shaders (depth_camera_fs.glsl)
     colorTexDef->hwGammaWrite = Ogre::TextureDefinitionBase::BoolTrue;
     colorTexDef->depthBufferId = Ogre::DepthBuffer::POOL_DEFAULT;
-    colorTexDef->depthBufferFormat = Ogre::PF_D32_FLOAT;
-    colorTexDef->preferDepthTexture = true;
+    colorTexDef->depthBufferFormat = Ogre::PF_UNKNOWN;
+    colorTexDef->preferDepthTexture = false;
     colorTexDef->fsaaExplicitResolve = false;
 
     Ogre::TextureDefinitionBase::TextureDefinition *particleTexDef =
