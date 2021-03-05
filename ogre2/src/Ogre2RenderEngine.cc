@@ -20,6 +20,7 @@
 # include <X11/Xlib.h>
 # include <X11/Xutil.h>
 # include <GL/glx.h>
+# include <GL/glxext.h>
 #endif
 
 #ifdef _WIN32
@@ -44,7 +45,7 @@
 class ignition::rendering::Ogre2RenderEnginePrivate
 {
 #if !defined(__APPLE__) && !defined(_WIN32)
-  public: XVisualInfo *dummyVisual = nullptr;
+  public: GLXFBConfig* dummyFBConfigs = nullptr;
 #endif
 
   /// \brief A list of supported fsaa levels
@@ -136,8 +137,8 @@ void Ogre2RenderEngine::Destroy()
     XDestroyWindow(x11Display, this->dummyWindowId);
     XCloseDisplay(x11Display);
     this->dummyDisplay = nullptr;
-    XFree(this->dataPtr->dummyVisual);
-    this->dataPtr->dummyVisual = nullptr;
+    XFree(this->dataPtr->dummyFBConfigs);
+    this->dataPtr->dummyFBConfigs = nullptr;
   }
 #endif
 }
@@ -346,15 +347,22 @@ void Ogre2RenderEngine::CreateContext()
   // create X11 visual
   int screenId = DefaultScreen(x11Display);
 
-  int attributeList[] = { GLX_RGBA, GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 16,
-      GLX_STENCIL_SIZE, 8, None };
+  int attributeList[] = {
+    GLX_RENDER_TYPE, GLX_RGBA_BIT,
+    GLX_DOUBLEBUFFER, True,
+    GLX_DEPTH_SIZE, 16,
+    GLX_STENCIL_SIZE, 8,
+    None
+  };
 
-  this->dataPtr->dummyVisual =
-      glXChooseVisual(x11Display, screenId, attributeList);
+  int nelements = 0;
 
-  if (!this->dataPtr->dummyVisual)
+  this->dataPtr->dummyFBConfigs =
+      glXChooseFBConfig(x11Display, screenId, attributeList, &nelements);
+
+  if (nelements <= 0)
   {
-    ignerr << "Unable to create glx visual" << std::endl;
+    ignerr << "Unable to create glx fbconfig" << std::endl;
     return;
   }
 
@@ -362,8 +370,31 @@ void Ogre2RenderEngine::CreateContext()
   this->dummyWindowId = XCreateSimpleWindow(x11Display,
       RootWindow(this->dummyDisplay, screenId), 0, 0, 1, 1, 0, 0, 0);
 
-  this->dummyContext = glXCreateContext(x11Display, this->dataPtr->dummyVisual,
-                                        nullptr, 1);
+  PFNGLXCREATECONTEXTATTRIBSARBPROC glXCreateContextAttribsARB = 0;
+  glXCreateContextAttribsARB =
+      (PFNGLXCREATECONTEXTATTRIBSARBPROC)
+      glXGetProcAddress((const GLubyte*)"glXCreateContextAttribsARB");
+
+  if (glXCreateContextAttribsARB)
+  {
+    int contextAttribs[] = {
+      GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
+      GLX_CONTEXT_MINOR_VERSION_ARB, 3,
+      GLX_CONTEXT_FLAGS_ARB        , GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
+      None
+    };
+    this->dummyContext =
+        glXCreateContextAttribsARB(x11Display,
+                                  this->dataPtr->dummyFBConfigs[0], nullptr,
+                                  1, contextAttribs);
+  }
+  else
+  {
+    ignwarn << "glXCreateContextAttribsARB() not found" << std::endl;
+    this->dummyContext = glXCreateNewContext(x11Display,
+                                             this->dataPtr->dummyFBConfigs[0],
+                                             GLX_RGBA_TYPE, nullptr, 1);
+  }
 
   GLXContext x11Context = static_cast<GLXContext>(this->dummyContext);
 
