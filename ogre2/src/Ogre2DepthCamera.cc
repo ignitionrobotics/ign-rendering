@@ -23,6 +23,8 @@
   #include <windows.h>
 #endif
 
+#include <iostream>
+
 #include <math.h>
 #include <ignition/math/Helpers.hh>
 
@@ -102,7 +104,7 @@ class ignition::rendering::Ogre2DepthCameraPrivate
   public: Ogre::CompositorWorkspace *ogreCompositorWorkspace = nullptr;
 
   /// \brief Output texture with depth and color data
-  public: Ogre::TexturePtr ogreDepthTexture;
+  public: Ogre::TextureGpu * ogreDepthTexture;
 
   /// \brief Dummy render texture for the depth data
   public: RenderTexturePtr depthTexture;
@@ -146,6 +148,7 @@ using namespace rendering;
 //////////////////////////////////////////////////
 void Ogre2DepthGaussianNoisePass::PreRender()
 {
+  std::cerr << "Ogre2DepthGaussianNoisePass::PreRender()" << '\n';
   // This function is similar to Ogre2GaussianNoisePass but duplicated here
   // for Ogre2DepthCamera
 
@@ -229,7 +232,7 @@ void Ogre2DepthGaussianNoisePass::CreateRenderPass()
         static_cast<Ogre::CompositorPassQuadDef *>(
         inputTargetDef->addPass(Ogre::PASS_QUAD));
     passQuad->mMaterialName = materialName;
-    passQuad->addQuadTextureSource(0, "rt_input", 0);
+    passQuad->addQuadTextureSource(0, "rt_input");
   }
   nodeDef->mapOutputChannel(0, "rt_output");
   nodeDef->mapOutputChannel(1, "rt_input");
@@ -291,11 +294,12 @@ void Ogre2DepthCamera::Destroy()
   Ogre::CompositorManager2 *ogreCompMgr = ogreRoot->getCompositorManager2();
 
   // remove depth texture, material, compositor
-  if (this->dataPtr->ogreDepthTexture)
-  {
-    Ogre::TextureManager::getSingleton().remove(
-        this->dataPtr->ogreDepthTexture->getName());
-  }
+  // TODO(ahcorde)
+  // if (this->dataPtr->ogreDepthTexture)
+  // {
+  //   Ogre::TextureManager::getSingleton().remove(
+  //       this->dataPtr->ogreDepthTexture->getName());
+  // }
   if (this->dataPtr->ogreCompositorWorkspace)
   {
     ogreCompMgr->removeWorkspace(
@@ -407,6 +411,11 @@ void Ogre2DepthCamera::CreateDepthTexture()
   this->ogreCamera->setNearClipDistance(nearPlane);
   this->ogreCamera->setFarClipDistance(farPlane);
 
+  std::cerr << "AspectRatio " << this->aspect << '\n';
+  std::cerr << "setFOVy " << Ogre::Radian(this->LimitFOV(vfov)) << '\n';
+  std::cerr << "farPlane " << farPlane << '\n';
+  std::cerr << "nearPlane " << nearPlane << '\n';
+
   // Set the uniform variables (depth_camera_fs.glsl).
   // The projectParams is used to linearize depth buffer data
   // The other params are used to clamp the range output
@@ -435,6 +444,11 @@ void Ogre2DepthCamera::CreateDepthTexture()
     static_cast<float>(this->dataPtr->particleStddev));
   psParams->setNamedConstant("particleScatterRatio",
     static_cast<float>(this->dataPtr->particleScatterRatio));
+
+  std::cerr << "projectionA " << projectionA << " " << projectionB << '\n';
+  std::cerr << "Clip " << NearClipPlane() << " " << FarClipPlane() << '\n';
+  std::cerr << "data " << this->dataPtr->dataMaxVal << " " << this->dataPtr->dataMinVal << '\n';
+  std::cerr << "BackgroundColor " << this->Scene()->BackgroundColor() << '\n';
 
   std::string matDepthFinalName = "DepthCameraFinal";
   Ogre::MaterialPtr matDepthFinal =
@@ -479,7 +493,7 @@ void Ogre2DepthCamera::CreateDepthTexture()
     Ogre::TextureUnitState *texUnit =
         mat->getTechnique(0u)->getPass(0u)->getTextureUnitState(0u);
     texUnit->setTextureName(backgroundMaterial->EnvironmentMap(),
-        Ogre::TEX_TYPE_CUBE_MAP);
+        Ogre::TextureTypes::TypeCube);
   }
 
   // Create depth camera compositor
@@ -583,121 +597,127 @@ void Ogre2DepthCamera::CreateDepthTexture()
     this->dataPtr->ogreCompositorBaseNodeDef = baseNodeDefName;
     Ogre::CompositorNodeDef *baseNodeDef =
         ogreCompMgr->addNodeDefinition(baseNodeDefName);
+
     Ogre::TextureDefinitionBase::TextureDefinition *rt0TexDef =
         baseNodeDef->addTextureDefinition("rt0");
-    rt0TexDef->textureType = Ogre::TEX_TYPE_2D;
+    rt0TexDef->textureType = Ogre::TextureTypes::Type2D;
     rt0TexDef->width = 0;
     rt0TexDef->height = 0;
-    rt0TexDef->depth = 1;
+    rt0TexDef->depthOrSlices = 1;
     rt0TexDef->numMipmaps = 0;
     rt0TexDef->widthFactor = 1;
     rt0TexDef->heightFactor = 1;
-    rt0TexDef->formatList = {Ogre::PF_FLOAT32_RGBA};
-    rt0TexDef->fsaa = 0;
-    rt0TexDef->uav = false;
-    rt0TexDef->automipmaps = false;
-    rt0TexDef->hwGammaWrite = Ogre::TextureDefinitionBase::BoolFalse;
+    rt0TexDef->format = Ogre::PFG_RGBA32_FLOAT;
+    rt0TexDef->textureFlags |= !Ogre::TextureFlags::Uav;
     rt0TexDef->depthBufferId = Ogre::DepthBuffer::POOL_INVALID;
-    rt0TexDef->depthBufferFormat = Ogre::PF_UNKNOWN;
-    rt0TexDef->fsaaExplicitResolve = false;
+    rt0TexDef->depthBufferFormat = Ogre::PFG_UNKNOWN;
+    rt0TexDef->fsaa = "0";
+
+    Ogre::RenderTargetViewDef *rtv0 = baseNodeDef->addRenderTextureView("rt0");
+    rtv0->setForTextureDefinition("rt0", rt0TexDef);
 
     Ogre::TextureDefinitionBase::TextureDefinition *rt1TexDef =
         baseNodeDef->addTextureDefinition("rt1");
-    rt1TexDef->textureType = Ogre::TEX_TYPE_2D;
+    rt1TexDef->textureType = Ogre::TextureTypes::Type2D;
     rt1TexDef->width = 0;
     rt1TexDef->height = 0;
-    rt1TexDef->depth = 1;
+    rt1TexDef->depthOrSlices = 1;
     rt1TexDef->numMipmaps = 0;
     rt1TexDef->widthFactor = 1;
     rt1TexDef->heightFactor = 1;
-    rt1TexDef->formatList = {Ogre::PF_FLOAT32_RGBA};
-    rt1TexDef->fsaa = 0;
-    rt1TexDef->uav = false;
-    rt1TexDef->automipmaps = false;
-    rt1TexDef->hwGammaWrite = Ogre::TextureDefinitionBase::BoolFalse;
+    rt1TexDef->format = Ogre::PFG_RGBA32_FLOAT;
+    rt1TexDef->textureFlags |= !Ogre::TextureFlags::Uav;
     rt1TexDef->depthBufferId = Ogre::DepthBuffer::POOL_INVALID;
-    rt1TexDef->depthBufferFormat = Ogre::PF_UNKNOWN;
-    rt1TexDef->fsaaExplicitResolve = false;
+    rt1TexDef->depthBufferFormat = Ogre::PFG_UNKNOWN;
+    rt1TexDef->fsaa = "0";
+
+    Ogre::RenderTargetViewDef *rtv1 = baseNodeDef->addRenderTextureView("rt1");
+    rtv1->setForTextureDefinition("rt1", rt1TexDef);
 
     Ogre::TextureDefinitionBase::TextureDefinition *depthTexDef =
         baseNodeDef->addTextureDefinition("depthTexture");
-    depthTexDef->textureType = Ogre::TEX_TYPE_2D;
+    depthTexDef->textureType = Ogre::TextureTypes::Type2D;
     depthTexDef->width = 0;
     depthTexDef->height = 0;
-    depthTexDef->depth = 1;
+    depthTexDef->depthOrSlices = 1;
     depthTexDef->numMipmaps = 0;
     depthTexDef->widthFactor = 1;
     depthTexDef->heightFactor = 1;
-    depthTexDef->formatList = {Ogre::PF_D32_FLOAT};
-    depthTexDef->fsaa = 0;
-    depthTexDef->uav = false;
-    depthTexDef->automipmaps = false;
-    depthTexDef->hwGammaWrite = Ogre::TextureDefinitionBase::BoolFalse;
+    depthTexDef->format = Ogre::PFG_D32_FLOAT;
+    depthTexDef->textureFlags |= !Ogre::TextureFlags::Uav;
     depthTexDef->depthBufferId = Ogre::DepthBuffer::POOL_DEFAULT;
-    depthTexDef->depthBufferFormat = Ogre::PF_UNKNOWN;
-    depthTexDef->fsaaExplicitResolve = false;
+    depthTexDef->depthBufferFormat = Ogre::PFG_UNKNOWN;
+    depthTexDef->fsaa = "0";
+
+    Ogre::RenderTargetViewDef *rtvDepth =
+      baseNodeDef->addRenderTextureView("depthTexture");
+    rtvDepth->setForTextureDefinition("depthTexture", depthTexDef );
 
     Ogre::TextureDefinitionBase::TextureDefinition *colorTexDef =
         baseNodeDef->addTextureDefinition("colorTexture");
-    colorTexDef->textureType = Ogre::TEX_TYPE_2D;
+    colorTexDef->textureType = Ogre::TextureTypes::Type2D;
     colorTexDef->width = 0;
     colorTexDef->height = 0;
-    colorTexDef->depth = 1;
+    colorTexDef->depthOrSlices = 1;
     colorTexDef->numMipmaps = 0;
     colorTexDef->widthFactor = 1;
     colorTexDef->heightFactor = 1;
-    colorTexDef->formatList = {Ogre::PF_R8G8B8};
-    colorTexDef->fsaa = 0;
-    colorTexDef->uav = false;
-    colorTexDef->automipmaps = false;
+    colorTexDef->format = Ogre::PFG_RGB8_UNORM;
     // Enable gamma write to avoid discretization in the color values
     // Note we are using low level materials in quad pass so also had to perform
     // gamma correction in the fragment shaders (depth_camera_fs.glsl)
-    colorTexDef->hwGammaWrite = Ogre::TextureDefinitionBase::BoolTrue;
+    colorTexDef->textureFlags |= !Ogre::TextureFlags::Uav;
     colorTexDef->depthBufferId = Ogre::DepthBuffer::POOL_DEFAULT;
-    colorTexDef->depthBufferFormat = Ogre::PF_D32_FLOAT;
+    colorTexDef->depthBufferFormat = Ogre::PFG_D32_FLOAT;
     colorTexDef->preferDepthTexture = true;
-    colorTexDef->fsaaExplicitResolve = false;
+    colorTexDef->fsaa = "0";
+
+    Ogre::RenderTargetViewDef *rtvColor =
+      baseNodeDef->addRenderTextureView("colorTexture");
+    rtvColor->setForTextureDefinition("colorTexture", colorTexDef);
 
     Ogre::TextureDefinitionBase::TextureDefinition *particleTexDef =
         baseNodeDef->addTextureDefinition("particleTexture");
-    particleTexDef->textureType = Ogre::TEX_TYPE_2D;
+    particleTexDef->textureType = Ogre::TextureTypes::Type2D;
     particleTexDef->width = 0;
     particleTexDef->height = 0;
-    particleTexDef->depth = 1;
+    particleTexDef->depthOrSlices = 1;
     particleTexDef->numMipmaps = 0;
     particleTexDef->widthFactor = 0.5;
     particleTexDef->heightFactor = 0.5;
-    particleTexDef->formatList = {Ogre::PF_L8};
-    particleTexDef->fsaa = 0;
-    particleTexDef->uav = false;
-    particleTexDef->automipmaps = false;
-    particleTexDef->hwGammaWrite = Ogre::TextureDefinitionBase::BoolFalse;
+    particleTexDef->format = Ogre::PFG_R8_UNORM;
+    particleTexDef->textureFlags |= !Ogre::TextureFlags::Uav;
     particleTexDef->depthBufferId = Ogre::DepthBuffer::POOL_DEFAULT;
-    particleTexDef->depthBufferFormat = Ogre::PF_UNKNOWN;
+    particleTexDef->depthBufferFormat = Ogre::PFG_UNKNOWN;
     particleTexDef->preferDepthTexture = false;
-    particleTexDef->fsaaExplicitResolve = false;
+    particleTexDef->fsaa = "0";
+
+    Ogre::RenderTargetViewDef *rtvParticleTexture =
+      baseNodeDef->addRenderTextureView("particleTexture");
+    rtvParticleTexture->setForTextureDefinition(
+      "particleTexture", particleTexDef);
 
     Ogre::TextureDefinitionBase::TextureDefinition *particleDepthTexDef =
         baseNodeDef->addTextureDefinition("particleDepthTexture");
-    particleDepthTexDef->textureType = Ogre::TEX_TYPE_2D;
+    particleDepthTexDef->textureType = Ogre::TextureTypes::Type2D;
     particleDepthTexDef->width = 0;
     particleDepthTexDef->height = 0;
-    particleDepthTexDef->depth = 1;
+    particleDepthTexDef->depthOrSlices = 1;
     particleDepthTexDef->numMipmaps = 0;
     particleDepthTexDef->widthFactor = 0.5;
     particleDepthTexDef->heightFactor = 0.5;
-    particleDepthTexDef->formatList = {Ogre::PF_D32_FLOAT};
-    particleDepthTexDef->fsaa = 0;
-    particleDepthTexDef->uav = false;
-    particleDepthTexDef->automipmaps = false;
-    particleDepthTexDef->hwGammaWrite = Ogre::TextureDefinitionBase::BoolFalse;
+    particleDepthTexDef->format = Ogre::PFG_D32_FLOAT;
     particleDepthTexDef->depthBufferId = Ogre::DepthBuffer::POOL_NON_SHAREABLE;
-    particleDepthTexDef->depthBufferFormat = Ogre::PF_UNKNOWN;
-    particleDepthTexDef->fsaaExplicitResolve = false;
+    particleDepthTexDef->depthBufferFormat = Ogre::PFG_UNKNOWN;
+    particleDepthTexDef->fsaa = "0";
+    particleDepthTexDef->textureFlags |= !Ogre::TextureFlags::Uav;
+
+    Ogre::RenderTargetViewDef *rtvparticleDepthTex =
+      baseNodeDef->addRenderTextureView("particleDepthTexture");
+    rtvparticleDepthTex->setForTextureDefinition(
+      "particleDepthTexture", particleDepthTexDef);
 
     baseNodeDef->setNumTargetPass(5);
-
     Ogre::CompositorTargetDef *colorTargetDef =
         baseNodeDef->addTargetPass("colorTexture");
 
@@ -710,8 +730,8 @@ void Ogre2DepthCamera::CreateDepthTexture()
       Ogre::CompositorPassClearDef *passClear =
           static_cast<Ogre::CompositorPassClearDef *>(
           colorTargetDef->addPass(Ogre::PASS_CLEAR));
-      passClear->mColourValue = Ogre::ColourValue(
-          Ogre2Conversions::Convert(this->Scene()->BackgroundColor()));
+      passClear->setAllClearColours(Ogre::ColourValue(
+          Ogre2Conversions::Convert(this->Scene()->BackgroundColor())));
 
       if (validBackground)
       {
@@ -747,8 +767,10 @@ void Ogre2DepthCamera::CreateDepthTexture()
       Ogre::CompositorPassClearDef *passClear =
           static_cast<Ogre::CompositorPassClearDef *>(
           depthTargetDef->addPass(Ogre::PASS_CLEAR));
-      passClear->mColourValue = Ogre::ColourValue(this->FarClipPlane(),
-          this->FarClipPlane(), this->FarClipPlane());
+      passClear->setAllClearColours(Ogre::ColourValue(
+        this->FarClipPlane(),
+        this->FarClipPlane(),
+        this->FarClipPlane()));
 
       // scene pass
       Ogre::CompositorPassSceneDef *passScene =
@@ -767,7 +789,7 @@ void Ogre2DepthCamera::CreateDepthTexture()
       Ogre::CompositorPassClearDef *passClear =
           static_cast<Ogre::CompositorPassClearDef *>(
           particleTargetDef->addPass(Ogre::PASS_CLEAR));
-      passClear->mColourValue = Ogre::ColourValue::Black;
+      passClear->setAllClearColours(Ogre::ColourValue::Black);
 
       // scene pass
       Ogre::CompositorPassSceneDef *passScene =
@@ -785,8 +807,10 @@ void Ogre2DepthCamera::CreateDepthTexture()
       Ogre::CompositorPassClearDef *passClear =
           static_cast<Ogre::CompositorPassClearDef *>(
           particleDepthTargetDef->addPass(Ogre::PASS_CLEAR));
-      passClear->mColourValue = Ogre::ColourValue(this->FarClipPlane(),
-          this->FarClipPlane(), this->FarClipPlane());
+      passClear->setAllClearColours(Ogre::ColourValue(
+        this->FarClipPlane(),
+        this->FarClipPlane(),
+        this->FarClipPlane()));
 
       // scene pass
       Ogre::CompositorPassSceneDef *passScene =
@@ -805,18 +829,18 @@ void Ogre2DepthCamera::CreateDepthTexture()
       Ogre::CompositorPassClearDef *passClear =
           static_cast<Ogre::CompositorPassClearDef *>(
           inTargetDef->addPass(Ogre::PASS_CLEAR));
-      passClear->mColourValue = Ogre::ColourValue(this->FarClipPlane(),
-          this->FarClipPlane(), this->FarClipPlane());
+      passClear->setAllClearColours(Ogre::ColourValue(this->FarClipPlane(),
+          this->FarClipPlane(), this->FarClipPlane()));
 
       // quad pass
       Ogre::CompositorPassQuadDef *passQuad =
           static_cast<Ogre::CompositorPassQuadDef *>(
           inTargetDef->addPass(Ogre::PASS_QUAD));
       passQuad->mMaterialName = this->dataPtr->depthMaterial->getName();
-      passQuad->addQuadTextureSource(0, "depthTexture", 0);
-      passQuad->addQuadTextureSource(1, "colorTexture", 0);
-      passQuad->addQuadTextureSource(2, "particleTexture", 0);
-      passQuad->addQuadTextureSource(3, "particleDepthTexture", 0);
+      passQuad->addQuadTextureSource(0, "depthTexture");
+      passQuad->addQuadTextureSource(1, "colorTexture");
+      passQuad->addQuadTextureSource(2, "particleTexture");
+      passQuad->addQuadTextureSource(3, "particleDepthTexture");
       passQuad->mFrustumCorners =
           Ogre::CompositorPassQuadDef::VIEW_SPACE_CORNERS;
     }
@@ -867,15 +891,18 @@ void Ogre2DepthCamera::CreateDepthTexture()
       Ogre::CompositorPassClearDef *passClear =
           static_cast<Ogre::CompositorPassClearDef *>(
           outputTargetDef->addPass(Ogre::PASS_CLEAR));
-      passClear->mColourValue = Ogre::ColourValue(this->FarClipPlane(),
-          this->FarClipPlane(), this->FarClipPlane());
+      passClear->setAllClearColours(
+        Ogre::ColourValue(
+          this->FarClipPlane(),
+          this->FarClipPlane(),
+          this->FarClipPlane()));
 
       // quad pass
       Ogre::CompositorPassQuadDef *passQuad =
           static_cast<Ogre::CompositorPassQuadDef *>(
           outputTargetDef->addPass(Ogre::PASS_QUAD));
       passQuad->mMaterialName = this->dataPtr->depthFinalMaterial->getName();
-      passQuad->addQuadTextureSource(0, "rt_input", 0);
+      passQuad->addQuadTextureSource(0, "rt_input");
     }
     finalNodeDef->mapOutputChannel(0, "rt_output");
 
@@ -902,21 +929,33 @@ void Ogre2DepthCamera::CreateDepthTexture()
            << " for " << this->Name();
   }
 
+  Ogre::TextureGpuManager *textureMgr = ogreRoot->getRenderSystem()->getTextureGpuManager();
   // create render texture - these textures pack the range data
   this->dataPtr->ogreDepthTexture =
-    Ogre::TextureManager::getSingleton().createManual(
-    this->Name() + "_depth", "General", Ogre::TEX_TYPE_2D,
-    this->ImageWidth(), this->ImageHeight(), 1, 0,
-    Ogre::PF_FLOAT32_RGBA, Ogre::TU_RENDERTARGET,
-    0, false, 0, Ogre::BLANKSTRING, false, true);
+    textureMgr->createOrRetrieveTexture(
+      this->Name() + "_depth",
+      "General",
+      Ogre::GpuPageOutStrategy::SaveToSystemRam,
+      Ogre::TextureFlags::RenderToTexture,
+      Ogre::TextureTypes::Type2D);
 
-  Ogre::RenderTarget *rt =
-    this->dataPtr->ogreDepthTexture->getBuffer()->getRenderTarget();
+  this->dataPtr->ogreDepthTexture->setResolution(
+    this->ImageWidth(), this->ImageHeight());
+  this->dataPtr->ogreDepthTexture->setNumMipmaps(1u);
+  this->dataPtr->ogreDepthTexture->setPixelFormat(
+    Ogre::PFG_RGBA32_FLOAT);
+
+  this->dataPtr->ogreDepthTexture->scheduleTransitionTo(
+    Ogre::GpuResidency::Resident);
 
   // create compositor worksspace
   this->dataPtr->ogreCompositorWorkspace =
-      ogreCompMgr->addWorkspace(this->scene->OgreSceneManager(),
-      rt, this->ogreCamera, wsDefName, false);
+      ogreCompMgr->addWorkspace(
+        this->scene->OgreSceneManager(),
+        this->dataPtr->ogreDepthTexture,
+        this->ogreCamera,
+        wsDefName,
+        false);
 }
 
 //////////////////////////////////////////////////
@@ -927,6 +966,11 @@ void Ogre2DepthCamera::Render()
   auto engine = Ogre2RenderEngine::Instance();
   engine->OgreRoot()->renderOneFrame();
   this->dataPtr->ogreCompositorWorkspace->setEnabled(false);
+
+
+  Ogre::Image2 image;
+  image.convertFromTexture(this->dataPtr->ogreDepthTexture, 0u, 0u);
+  image.save("./AlexDepth2.png", 0u, 1u);
 }
 
 //////////////////////////////////////////////////
@@ -955,22 +999,22 @@ void Ogre2DepthCamera::PostRender()
   unsigned int height = this->ImageHeight();
 
   PixelFormat format = PF_FLOAT32_RGBA;
-  Ogre::PixelFormat imageFormat = Ogre2Conversions::Convert(format);
+  Ogre::PixelFormatGpu imageFormat = Ogre2Conversions::Convert(format);
 
-  size_t size = Ogre::PixelUtil::getMemorySize(width, height, 1, imageFormat);
   int len = width * height;
   unsigned int channelCount = PixelUtil::ChannelCount(format);
 
+  Ogre::Image2 image;
+  image.convertFromTexture(this->dataPtr->ogreDepthTexture, 0u, 0u);
+  image.save("./AlexDepth.png", 0u, 1u);
+  float * depthBufferTmp = static_cast<float *>(image.getRawBuffer());
   if (!this->dataPtr->depthBuffer)
   {
     this->dataPtr->depthBuffer = new float[len * channelCount];
   }
-  Ogre::PixelBox dstBox(width, height,
-        1, imageFormat, this->dataPtr->depthBuffer);
 
-  // blit data from gpu to cpu
-  auto rt = this->dataPtr->ogreDepthTexture->getBuffer()->getRenderTarget();
-  rt->copyContentsToMemory(dstBox, Ogre::RenderTarget::FB_AUTO);
+  memcpy(this->dataPtr->depthBuffer, depthBufferTmp,
+      len * channelCount);
 
   if (!this->dataPtr->depthImage)
   {
@@ -997,7 +1041,8 @@ void Ogre2DepthCamera::PostRender()
   // point cloud data
   if (this->dataPtr->newRgbPointCloud.ConnectionCount() > 0u)
   {
-    memcpy(this->dataPtr->pointCloudImage, this->dataPtr->depthBuffer, size);
+    memcpy(this->dataPtr->pointCloudImage,
+      this->dataPtr->depthBuffer, len * channelCount * sizeof(float));
     this->dataPtr->newRgbPointCloud(
         this->dataPtr->pointCloudImage, width, height, channelCount,
         "PF_FLOAT32_RGBA");
@@ -1035,15 +1080,15 @@ void Ogre2DepthCamera::PostRender()
   }
 
   // Uncomment to debug depth output
-  // igndbg << "wxh: " << width << " x " << height << std::endl;
-  // for (unsigned int i = 0; i < height; ++i)
-  // {
-  //   for (unsigned int j = 0; j < width; ++j)
-  //   {
-  //     igndbg << "[" << this->dataPtr->depthImage[i*width + j] << "]";
-  //   }
-  //   igndbg << std::endl;
-  // }
+  std::cout << "wxh: " << width << " x " << height << std::endl;
+  for (unsigned int i = 0; i < height; ++i)
+  {
+    for (unsigned int j = 0; j < width; ++j)
+    {
+      std::cout << "[" << this->dataPtr->depthImage[i*width + j] << "]\n";
+    }
+    std::cout << std::endl;
+  }
 }
 
 //////////////////////////////////////////////////

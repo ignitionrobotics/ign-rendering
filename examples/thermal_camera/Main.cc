@@ -102,6 +102,7 @@ void buildScene(ScenePtr _scene)
   camera->SetAmbientTemperatureRange(5.0);
   camera->SetLinearResolution(0.01);
   camera->SetHeatSourceTemperatureRange(30.0);
+  // camera->SetImageFormat(PF_L16);
   root->AddChild(camera);
 }
 

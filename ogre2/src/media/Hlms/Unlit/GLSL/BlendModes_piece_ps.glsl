@@ -93,11 +93,6 @@
 @foreach( 16, n )
 @property( uv_atlas@n ) @piece( atlasOffset@n )* atlasOffsets[@n].z + atlasOffsets[@n].xy @end @end @end
 
-// Get the indexes to the textureMaps[] array using template code. We had to add 1
-// to the actual value otherwise property( diffuse_map ) fails when the index is 0
-@foreach( diffuse_map, n )
-	@sub( diffuse_map@n_idx, diffuse_map@n, 1 ) @end
-
 @piece( diffuseIdx0 )material.indices0_3.x & 0x0000FFFFu@end
 @piece( diffuseIdx1 )material.indices0_3.x >> 16u@end
 @piece( diffuseIdx2 )material.indices0_3.y & 0x0000FFFFu@end
@@ -110,26 +105,26 @@
 @foreach( diffuse_map, n )
 	@property( diffuse_map@n_array )
 		@piece( SamplerOrigin@n )textureMapsArray[@value(diffuse_map@n_idx)]@end
-	@end @property( !diffuse_map@n_array )
+	@else
 		@piece( SamplerOrigin@n )textureMaps[@value(diffuse_map@n_idx)]@end
 	@end
 	@property( !diffuse_map@n_reflection )
 		@property( diffuse_map@n_array )
 			@piece( SamplerUV@n )vec3( inPs.uv@value( uv_diffuse@n ).@insertpiece( uv_diffuse_swizzle@n ), @insertpiece( diffuseIdx@n ) )@end
-		@end @property( !diffuse_map@n_array )
+		@else
 			@piece( SamplerUV@n )inPs.uv@value( uv_diffuse@n ).@insertpiece( uv_diffuse_swizzle@n )@end
 		@end
-	@end @property( diffuse_map@n_reflection )
+	@else
 		@property( !hlms_forwardplus_flipY )
 			@property( diffuse_map@n_array )
 				@piece( SamplerUV@n )vec3( gl_FragCoord.x * passBuf.invWindowSize.x, 1.0 - gl_FragCoord.y * passBuf.invWindowSize.y, @insertpiece( diffuseIdx@n ) )@end
-			@end @property( !diffuse_map@n_array )
+			@else
 				@piece( SamplerUV@n )vec2( gl_FragCoord.x * passBuf.invWindowSize.x, 1.0 - gl_FragCoord.y * passBuf.invWindowSize.y )@end
 			@end
-		@end @property( hlms_forwardplus_flipY )
+		@else
 			@property( diffuse_map@n_array )
 				@piece( SamplerUV@n )vec3( gl_FragCoord.xy * passBuf.invWindowSize.xy, @insertpiece( diffuseIdx@n ) )@end
-			@end @property( !diffuse_map@n_array )
+			@else
 				@piece( SamplerUV@n )vec2( gl_FragCoord.xy * passBuf.invWindowSize.xy )@end
 			@end
 		@end

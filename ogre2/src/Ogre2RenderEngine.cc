@@ -293,6 +293,11 @@ bool Ogre2RenderEngine::InitImpl()
     this->InitAttempt();
     return true;
   }
+  catch (Ogre::Exception &ex)
+  {
+    ignerr << ex.what() << std::endl;
+    return false;
+  }
   catch (...)
   {
     ignerr << "Failed to initialize render-engine" << std::endl;
@@ -527,12 +532,60 @@ void Ogre2RenderEngine::CreateRenderSystem()
   // We operate in windowed mode
   renderSys->setConfigOption("Full Screen", "No");
 
+  renderSys->setConfigOption( "Interface", "Headless EGL / PBuffer" );
+
+  {
+    const Ogre::ConfigOptionMap &configOptions = renderSys->getConfigOptions();
+    Ogre::ConfigOptionMap::const_iterator itor = configOptions.find( "Device" );
+    if( itor == configOptions.end() )
+    {
+        fprintf( stderr, "Something must be wrong with EGL init. Cannot find Device" );
+        return;
+    }
+
+    if( isatty( fileno( stdin ) ) )
+    {
+        printf( "Select device (this sample supports selecting between the first 10):\n" );
+
+        int devNum = 0;
+        Ogre::StringVector::const_iterator itDev = itor->second.possibleValues.begin();
+        Ogre::StringVector::const_iterator enDev = itor->second.possibleValues.end();
+
+        while( itDev != enDev )
+        {
+            printf( "[%i] %s\n", devNum, itDev->c_str() );
+            ++devNum;
+            ++itDev;
+        }
+
+        devNum = std::min( devNum, 10 );
+
+        int devIdxChar = '0';//getchar();
+        // while( devIdxChar < '0' || devIdxChar - '0' > devNum )
+        //     devIdxChar = getchar();
+
+        const uint32_t devIdx = static_cast<uint32_t>( devIdxChar - '0' );
+
+        printf( "Selecting [%i] %s\n", devIdx, itor->second.possibleValues[devIdx].c_str() );
+        renderSys->setConfigOption( "Device", itor->second.possibleValues[devIdx] );
+    }
+    else
+    {
+        printf( "!!! IMPORTANT !!!\n" );
+        printf(
+            "App is running from a file or pipe. Selecting a default device. Run from a real "
+            "terminal for interactive selection\n" );
+        printf( "!!! IMPORTANT !!!\n" );
+        fflush( stdout );
+    }
+  }
+
   /// We used to allow the user to set the RTT mode to PBuffer, FBO, or Copy.
   ///   Copy is slow, and there doesn't seem to be a good reason to use it
   ///   PBuffer limits the size of the renderable area of the RTT to the
   ///           size of the first window created.
   ///   FBO seem to be the only good option
-  renderSys->setConfigOption("RTT Preferred Mode", "FBO");
+  // renderSys->setConfigOption("RTT Preferred Mode", "FBO");
 
   // get all supported fsaa values
   Ogre::ConfigOptionMap configMap = renderSys->getConfigOptions();
@@ -570,8 +623,7 @@ void Ogre2RenderEngine::CreateRenderSystem()
   this->ogreRoot->setRenderSystem(renderSys);
 }
 
-//////////////////////////////////////////////////
-void Ogre2RenderEngine::CreateResources()
+void Ogre2RenderEngine::registerHlms()
 {
   const char *env = std::getenv("IGN_RENDERING_RESOURCE_PATH");
   std::string resourcePath = (env) ? std::string(env) :
@@ -584,41 +636,12 @@ void Ogre2RenderEngine::CreateResources()
     mediaPath = common::joinPaths(resourcePath, "ogre2", "src", "media");
   }
 
-  // register low level materials (ogre v1 materials)
-  std::vector< std::pair<std::string, std::string> > archNames;
-  std::string p = mediaPath;
-  if (common::isDirectory(p))
-  {
-    archNames.push_back(
-        std::make_pair(p, "General"));
-    archNames.push_back(
-        std::make_pair(p + "/materials/programs", "General"));
-    archNames.push_back(
-        std::make_pair(p + "/materials/scripts", "General"));
-    archNames.push_back(
-        std::make_pair(p + "/materials/textures", "General"));
-
-    for (auto aiter = archNames.begin(); aiter != archNames.end(); ++aiter)
-    {
-      try
-      {
-        Ogre::ResourceGroupManager::getSingleton().addResourceLocation(
-            aiter->first, "FileSystem", aiter->second);
-      }
-      catch(Ogre::Exception &/*_e*/)
-      {
-        ignerr << "Unable to load Ogre Resources. Make sure the resources "
-            "path in the world file is set correctly." << std::endl;
-      }
-    }
-  }
-
   // register PbsMaterial resources
   Ogre::String rootHlmsFolder = mediaPath;
   Ogre::String pbsCompositorFolder = common::joinPaths(
       rootHlmsFolder, "2.0", "scripts", "Compositors");
   Ogre::ResourceGroupManager::getSingleton().addResourceLocation(
-      pbsCompositorFolder, "FileSystem", "General");
+      pbsCompositorFolder, "FileSystem", "Popular");
   Ogre::String commonMaterialFolder = common::joinPaths(
       rootHlmsFolder, "2.0", "scripts", "materials", "Common");
   Ogre::ResourceGroupManager::getSingleton().addResourceLocation(
@@ -627,6 +650,10 @@ void Ogre2RenderEngine::CreateResources()
       rootHlmsFolder, "2.0", "scripts", "materials", "Common", "GLSL");
   Ogre::ResourceGroupManager::getSingleton().addResourceLocation(
       commonGLSLMaterialFolder, "FileSystem", "General");
+  Ogre::String commonGLSLESMaterialFolder = common::joinPaths(
+      rootHlmsFolder, "2.0", "scripts", "materials", "Common", "GLSLES");
+  Ogre::ResourceGroupManager::getSingleton().addResourceLocation(
+      commonGLSLESMaterialFolder, "FileSystem", "General");
 
   // The following code is taken from the registerHlms() function in ogre2
   // samples framework
@@ -704,11 +731,55 @@ void Ogre2RenderEngine::CreateResources()
 }
 
 //////////////////////////////////////////////////
+void Ogre2RenderEngine::CreateResources()
+{
+  const char *env = std::getenv("IGN_RENDERING_RESOURCE_PATH");
+  std::string resourcePath = (env) ? std::string(env) :
+      IGN_RENDERING_RESOURCE_PATH;
+  // install path
+  std::string mediaPath = common::joinPaths(resourcePath, "ogre2", "media");
+  if (!common::exists(mediaPath))
+  {
+    // src path
+    mediaPath = common::joinPaths(resourcePath, "ogre2", "src", "media");
+  }
+
+  // register low level materials (ogre v1 materials)
+  std::vector< std::pair<std::string, std::string> > archNames;
+  std::string p = mediaPath;
+  if (common::isDirectory(p))
+  {
+    archNames.push_back(
+        std::make_pair(p, "General"));
+    archNames.push_back(
+        std::make_pair(p + "/materials/programs", "General"));
+    archNames.push_back(
+        std::make_pair(p + "/materials/scripts", "General"));
+    archNames.push_back(
+        std::make_pair(p + "/materials/textures", "General"));
+
+    for (auto aiter = archNames.begin(); aiter != archNames.end(); ++aiter)
+    {
+      try
+      {
+        Ogre::ResourceGroupManager::getSingleton().addResourceLocation(
+            aiter->first, "FileSystem", aiter->second);
+      }
+      catch(Ogre::Exception &/*_e*/)
+      {
+        ignerr << "Unable to load Ogre Resources. Make sure the resources "
+            "path in the world file is set correctly." << std::endl;
+      }
+    }
+  }
+}
+
+//////////////////////////////////////////////////
 void Ogre2RenderEngine::CreateRenderWindow()
 {
   // create dummy window
   auto res = this->CreateRenderWindow(std::to_string(this->dummyWindowId),
-      1, 1, 1, 0);
+      800, 600, 1, 0);
   if (res.empty())
   {
     ignerr << "Failed to create dummy render window." << std::endl;
@@ -720,9 +791,11 @@ std::string Ogre2RenderEngine::CreateRenderWindow(const std::string &_handle,
     const unsigned int _width, const unsigned int _height,
     const double _ratio, const unsigned int _antiAliasing)
 {
+  std::cerr << "/* Ogre2RenderEngine::CreateRenderWindow w: "<< _width << " "
+    << _height << " useCurrentGLContext: " << useCurrentGLContext << '\n';
   Ogre::StringVector paramsVector;
   Ogre::NameValuePairList params;
-  Ogre::RenderWindow *window = nullptr;
+  window = nullptr;
 
   // if use current gl then don't include window handle params
   if (!this->useCurrentGLContext)
@@ -756,7 +829,7 @@ std::string Ogre2RenderEngine::CreateRenderWindow(const std::string &_handle,
   params["contentScalingFactor"] = std::to_string(_ratio);
 
   // Ogre 2 PBS expects gamma correction
-  params["gamma"] = "true";
+  params["gamma"] = "Yes";
 
   if (this->useCurrentGLContext)
   {
@@ -769,8 +842,9 @@ std::string Ogre2RenderEngine::CreateRenderWindow(const std::string &_handle,
   {
     try
     {
-      window = this->ogreRoot->createRenderWindow(
+      window = Ogre::Root::getSingleton().createRenderWindow(
           stream.str(), _width, _height, false, &params);
+      this->registerHlms();
     }
     catch(const std::exception &_e)
     {
@@ -789,8 +863,8 @@ std::string Ogre2RenderEngine::CreateRenderWindow(const std::string &_handle,
 
   if (window)
   {
-    window->setActive(true);
-    window->setVisible(true);
+    // window->setActive(true);
+    window->_setVisible(true);
 
     // Windows needs to reposition the render window to 0,0.
     window->reposition(0, 0);
@@ -804,7 +878,7 @@ void Ogre2RenderEngine::InitAttempt()
   this->initialized = false;
 
   // init the resources
-  Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups(false);
+  Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups(true);
 
   this->scenes = Ogre2SceneStorePtr(new Ogre2SceneStore);
 }

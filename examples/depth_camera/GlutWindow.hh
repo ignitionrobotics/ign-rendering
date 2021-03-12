@@ -14,28 +14,16 @@
  * limitations under the License.
  *
  */
+#ifndef IGNITION_RENDERING_EXAMPLES_THERMAL_CAMERA_GLUTWINDOW_HH_
+#define IGNITION_RENDERING_EXAMPLES_THERMAL_CAMERA_GLUTWINDOW_HH_
 
-compositor_node GaussianNoiseNode
-{
-  // render texture input from previous render pass
-  in 0 rt_input
-  // render texture output to be passed to next render pass
-  in 1 rt_output
+#include <vector>
+#include "ignition/rendering/RenderTypes.hh"
 
-  // Only one target pass is needed.
-  // rt_input is used as input to this pass and result is stored
-  // in rt_output
-  target rt_output
-  {
-    pass render_quad
-    {
-      material GaussianNoise
-      input 0 rt_input
-    }
-  }
-  // pass the result to the next render pass
-  out 0 rt_output
-  // pass the rt_input render texture to the next render pass
-  // where the texture is reused to store its result
-  out 1 rt_input
-}
+namespace ir = ignition::rendering;
+
+/// \brief Run the demo and render the scene from the cameras
+/// \param[in] _cameras Cameras in the scene
+void run(std::vector<ir::CameraPtr> _cameras);
+
+#endif

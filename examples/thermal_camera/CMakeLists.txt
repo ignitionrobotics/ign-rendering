@@ -31,6 +31,7 @@ target_link_libraries(thermal_camera
   ${OPENGL_LIBRARIES}
   ${GLEW_LIBRARIES}
   ${IGNITION-RENDERING_LIBRARIES}
+  X11
 )
 
 add_custom_command(TARGET thermal_camera POST_BUILD

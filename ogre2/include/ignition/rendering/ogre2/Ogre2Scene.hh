@@ -26,6 +26,9 @@
 
 #include "ignition/rendering/ogre2/Export.hh"
 
+#include "Compositor/OgreCompositorManager2.h"
+
+
 namespace Ogre
 {
   class Root;

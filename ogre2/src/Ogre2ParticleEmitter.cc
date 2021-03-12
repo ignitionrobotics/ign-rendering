@@ -216,7 +216,6 @@ void Ogre2ParticleEmitter::SetDuration(double _duration)
 {
   this->dataPtr->emitter->setDuration(_duration);
 
-
   this->duration = _duration;
 }
 
@@ -285,7 +284,6 @@ void Ogre2ParticleEmitter::SetVelocityRange(double _minVelocity,
     double _maxVelocity)
 {
   this->dataPtr->emitter->setParticleVelocity(_minVelocity, _maxVelocity);
-
 
   this->minVelocity = _minVelocity;
   this->maxVelocity = _maxVelocity;

@@ -23,6 +23,7 @@
 
 #include "ignition/rendering/ogre2/Ogre2Light.hh"
 #include "ignition/rendering/ogre2/Ogre2Mesh.hh"
+#include "ignition/rendering/ogre2/Ogre2Geometry.hh"
 #include "ignition/rendering/ogre2/Ogre2Node.hh"
 #include "ignition/rendering/ogre2/Ogre2Sensor.hh"
 #include "ignition/rendering/ogre2/Ogre2Scene.hh"

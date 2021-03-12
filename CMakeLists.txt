@@ -80,7 +80,7 @@ endif()
 
 #--------------------------------------
 # Find OGRE2
-ign_find_package(IgnOGRE2 VERSION 2.1.0
+ign_find_package(IgnOGRE2 VERSION 2.2.0
     COMPONENTS HlmsPbs HlmsUnlit Overlay
     REQUIRED_BY ogre2
     PRIVATE_FOR ogre2)
@@ -88,6 +88,12 @@ ign_find_package(IgnOGRE2 VERSION 2.1.0
 if (OGRE2_FOUND)
   set(HAVE_OGRE2 TRUE)
 endif()
+
+set(OGRE2_LIBRARIES ${OGRE2_LIBRARIES}/usr/lib/libOgreOverlay_d.so)
+message("OGRE2_LIBRARIES" ${OGRE2_LIBRARIES})
+message("OGRE2_INCLUDE_DIRS" ${OGRE2_INCLUDE_DIRS})
+message("OGRE2_VERSION" ${OGRE2_VERSION})
+
 
 # Plugin install dirs
 set(IGNITION_RENDERING_ENGINE_INSTALL_DIR

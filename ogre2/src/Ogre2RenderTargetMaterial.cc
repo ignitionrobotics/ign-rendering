@@ -19,35 +19,38 @@
 
 using namespace ignition::rendering;
 
+#include <iostream>
 
 //////////////////////////////////////////////////
 Ogre2RenderTargetMaterial::Ogre2RenderTargetMaterial(
-    Ogre::SceneManager *_scene, Ogre::RenderTarget *_renderTarget,
+    Ogre::SceneManager *_scene, Ogre::Camera *renderCamera,
     Ogre::Material *_material):
-  scene(_scene), renderTarget(_renderTarget), material(_material)
+  scene(_scene), renderCamera(renderCamera), material(_material)
 {
   // Pick a name that's unlikely to collide with a real material scheme
   this->schemeName = "__ignition__rendering__Ogre2RenderTargetMaterial";
-  this->renderTarget->getViewport(0)->setMaterialScheme(this->schemeName);
-  this->renderTarget->addListener(this);
+  Ogre::Viewport* renderViewport =
+    _scene->getCurrentViewport0();
+  renderViewport->setMaterialScheme(this->schemeName);
+  this->renderCamera->addListener(this);
 }
 
 //////////////////////////////////////////////////
 Ogre2RenderTargetMaterial::~Ogre2RenderTargetMaterial()
 {
-  this->renderTarget->removeListener(this);
+  this->renderCamera->removeListener(this);
 }
 
 //////////////////////////////////////////////////
-void Ogre2RenderTargetMaterial::preRenderTargetUpdate(
-    const Ogre::RenderTargetEvent & /*_evt*/)
+void Ogre2RenderTargetMaterial::cameraPreRenderScene(
+    Ogre::Camera * /*_evt*/)
 {
   Ogre::MaterialManager::getSingleton().addListener(this);
 }
 
 //////////////////////////////////////////////////
-void Ogre2RenderTargetMaterial::postRenderTargetUpdate(
-    const Ogre::RenderTargetEvent & /*_evt*/)
+void Ogre2RenderTargetMaterial::cameraPostRenderScene(
+    Ogre::Camera * /*_evt*/)
 {
   Ogre::MaterialManager::getSingleton().removeListener(this);
 }

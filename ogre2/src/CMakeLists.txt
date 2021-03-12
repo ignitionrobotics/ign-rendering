@@ -17,11 +17,14 @@ ign_add_component(${engine_name} SOURCES ${sources} GET_TARGET_NAME ogre2_target
 
 find_package(OpenGL)
 
+message("OGRE2_RESOURCE_PATH : " ${OGRE2_RESOURCE_PATH})
+message("IGN_RENDERING_RESOURCE_PATH : " ${IGN_RENDERING_RESOURCE_PATH})
+
 set_property(
   SOURCE Ogre2RenderEngine.cc
   PROPERTY COMPILE_DEFINITIONS
   IGN_RENDERING_RESOURCE_PATH="${IGN_RENDERING_RESOURCE_PATH}"
-  OGRE2_RESOURCE_PATH="${OGRE2_RESOURCE_PATH}"
+  OGRE2_RESOURCE_PATH="/home/ahcorde/ignition_ogre2.2/install/lib/OGRE-2.2/"
   OGRE2_VERSION="${OGRE2_VERSION}"
 )
 

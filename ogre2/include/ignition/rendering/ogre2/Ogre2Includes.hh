@@ -27,56 +27,72 @@
 // This prevents some deprecation #warning messages on OSX 10.9
 #pragma clang diagnostic ignored "-W#warnings"
 
+#include <memory>
+
+// #include <Deprecated/OgreRenderTargetListener.h>
 #include <Ogre.h>
 #include <OgreBillboard.h>
-#include <OgreImageCodec.h>
-#include <OgreMovableObject.h>
-#include <OgreRenderable.h>
-#include <OgreRenderWindow.h>
-#include <OgrePlugin.h>
+#include <OgreCamera.h>
+#include <OgreColourValue.h>
 #include <OgreDataStream.h>
-#include <OgreLogManager.h>
-#include <OgreWindowEventUtilities.h>
-#include <OgreSceneQuery.h>
-#include <OgreRoot.h>
+#include <OgreDepthBuffer.h>
+#include <OgreFrameListener.h>
+#include <OgreGpuProgramManager.h>
+#include <OgreHardwareBufferManager.h>
+#include <OgreHighLevelGpuProgramManager.h>
 #include <OgreItem.h>
-#include <OgreSceneManager.h>
-#include <OgreSceneNode.h>
-#include <OgreVector3.h>
+#include <OgreImage2.h>
+#include <OgreLogManager.h>
 #include <OgreManualObject.h>
 #include <OgreMaterialManager.h>
 #include <OgreMatrix4.h>
-#include <OgreColourValue.h>
-#include <OgreQuaternion.h>
 #include <OgreMesh2.h>
-#include <OgreSubMesh2.h>
 #include <OgreMeshManager2.h>
-#include <OgreHardwareBufferManager.h>
-#include <OgreCamera.h>
+#include <OgreMovableObject.h>
 #include <OgreNode.h>
-#include <OgreSimpleRenderable.h>
-#include <OgreFrameListener.h>
-#include <OgreTexture.h>
+#include <OgreOldSkeletonManager.h>
+#include <OgreParticleEmitter.h>
+#include <OgreParticleSystem.h>
+#include <OgrePass.h>
+#include <OgrePixelFormatGpuUtils.h>
+// #include <Deprecated/OgrePixelBox.h>
+#include <OgrePlugin.h>
+#include <OgreQuaternion.h>
 #include <OgreRectangle2D.h>
 #include <OgreRenderObjectListener.h>
+#include <OgreRenderable.h>
+#include <OgreRoot.h>
+#include <OgreSceneManager.h>
+#include <OgreSceneNode.h>
+#include <OgreSceneQuery.h>
+#include <OgreShadowCameraSetupPSSM.h>
+#include <OgreSimpleRenderable.h>
+#include <OgreStagingTexture.h>
+#include <OgreSubMesh2.h>
 #include <OgreTechnique.h>
-#include <OgrePass.h>
-#include <OgreOldSkeletonManager.h>
+#include <OgreTextureGpu.h>
+#include <OgreTextureGpuManager.h>
 #include <OgreTextureUnitState.h>
 #include <OgreGpuProgramManager.h>
 #include <OgreHighLevelGpuProgramManager.h>
-#include <OgreHardwarePixelBuffer.h>
+// #include <OgreHardwarePixelBuffer.h>
 #include <OgreShadowCameraSetupPSSM.h>
 #include <OgreDepthBuffer.h>
 #include <OgreParticleAffector.h>
 #include <OgreParticleAffectorFactory.h>
 #include <OgreParticleEmitter.h>
 #include <OgreParticleSystem.h>
+#include <OgreVector3.h>
+#include <OgreWindow.h>
+#include <OgreWindowEventUtilities.h>
+// #include <OgreHardwarePixelBuffer.h>
+// #include <OgreImageCodec.h>
 
-#include <OgreHlmsManager.h>
-#include <OgreHlmsTextureManager.h>
+// #include <OgreHlmsManager.h>
+// #include <OgreHlmsTextureManager.h>
 #include <Hlms/Unlit/OgreHlmsUnlit.h>
 #include <Hlms/Pbs/OgreHlmsPbs.h>
+// #include <Hlms/Common/OgreHlmsTextureBaseClass.h>
 
 #include <Compositor/OgreCompositorManager2.h>
 #include <Compositor/OgreCompositorNode.h>
@@ -95,6 +111,8 @@
 #include <Overlay/OgreOverlayContainer.h>
 #include <Overlay/OgreFontManager.h>
 #include <Overlay/OgreOverlaySystem.h>
+
+typedef std::shared_ptr<Ogre::TextureGpu>      TextureGpuPtr;
 
 // TODO(anyone): enable when ogre 2.1 fully supports paging
 // and terrain components

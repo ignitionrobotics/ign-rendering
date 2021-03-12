@@ -20,32 +20,32 @@ using namespace ignition;
 using namespace rendering;
 
 //////////////////////////////////////////////////
-const Ogre::PixelFormat Ogre2Conversions::ogrePixelFormats[PF_COUNT] =
+const Ogre::PixelFormatGpu Ogre2Conversions::ogrePixelFormats[PF_COUNT] =
     {
       // UKNOWN
-      Ogre::PF_UNKNOWN,
+      Ogre::PFG_UNKNOWN,
       // L8
-      Ogre::PF_L8,
+      Ogre::PFG_R8_UNORM,
       // R8G8B8
-      Ogre::PF_BYTE_RGB,
+      Ogre::PFG_RGB8_UNORM,
       // B8G8R8
-      Ogre::PF_BYTE_BGR,
+      Ogre::PFG_BGR8_UNORM,
       // BAYER_RGGB8
-      Ogre::PF_BYTE_RGB,
+      Ogre::PFG_RGB8_UNORM,
       // BAYER_BGGR8
-      Ogre::PF_BYTE_RGB,
+      Ogre::PFG_RGB8_UNORM,
       // BAYER_GBGR8
-      Ogre::PF_BYTE_RGB,
+      Ogre::PFG_RGB8_UNORM,
       // BAYER_GRGB8
-      Ogre::PF_BYTE_RGB,
+      Ogre::PFG_RGB8_UNORM,
       // PF_FLOAT32_R
-      Ogre::PF_FLOAT32_R,
+      Ogre::PFG_R32_FLOAT,
       // PF_FLOAT32_RGBA
-      Ogre::PF_FLOAT32_RGBA,
+      Ogre::PFG_RGBA32_FLOAT,
       // PF_FLOAT32_RGB
-      Ogre::PF_FLOAT32_RGB,
+      Ogre::PFG_RGB32_FLOAT,
       // PF_L16
-      Ogre::PF_L16
+      Ogre::PFG_R16_UNORM
     };
 
 //////////////////////////////////////////////////
@@ -97,7 +97,7 @@ math::Angle Ogre2Conversions::Convert(const Ogre::Radian &_angle)
 }
 
 //////////////////////////////////////////////////
-Ogre::PixelFormat Ogre2Conversions::Convert(PixelFormat _format)
+Ogre::PixelFormatGpu Ogre2Conversions::Convert(PixelFormat _format)
 {
   return Ogre2Conversions::ogrePixelFormats[_format];
 }
@@ -119,4 +119,3 @@ Ogre::Matrix4 Ogre2Conversions::Convert(const math::Matrix4d &_m)
                        _m(2, 0), _m(2, 1), _m(2, 2), _m(2, 3),
                        _m(3, 0), _m(3, 1), _m(3, 2), _m(3, 3));
 }
-

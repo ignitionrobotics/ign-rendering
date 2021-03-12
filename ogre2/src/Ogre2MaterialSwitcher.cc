@@ -63,8 +63,8 @@ Ogre2MaterialSwitcher::~Ogre2MaterialSwitcher()
 }
 
 ////////////////////////////////////////////////
-void Ogre2MaterialSwitcher::preRenderTargetUpdate(
-    const Ogre::RenderTargetEvent &/*_evt*/)
+void Ogre2MaterialSwitcher::cameraPreRenderScene(
+    Ogre::Camera * /*_evt*/)
 {
   // swap item to use v1 shader material
   // Note: keep an eye out for performance impact on switching materials
@@ -104,8 +104,8 @@ void Ogre2MaterialSwitcher::preRenderTargetUpdate(
 }
 
 /////////////////////////////////////////////////
-void Ogre2MaterialSwitcher::postRenderTargetUpdate(
-    const Ogre::RenderTargetEvent &/*_evt*/)
+void Ogre2MaterialSwitcher::cameraPostRenderScene(
+    Ogre::Camera * /*_evt*/)
 {
   // restore item to use hlms material
   auto itor = this->scene->OgreSceneManager()->getMovableObjectIterator(

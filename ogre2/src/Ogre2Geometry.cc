@@ -16,7 +16,6 @@
  */
 #include "ignition/rendering/ogre2/Ogre2Geometry.hh"
 
-#include "ignition/rendering/ogre2/Ogre2Scene.hh"
 #include "ignition/rendering/ogre2/Ogre2Visual.hh"
 
 using namespace ignition;

@@ -83,7 +83,7 @@ void buildScene(ScenePtr _scene)
   blue->SetReflectivity(0);
 
   // create box visual
-  VisualPtr box = _scene->CreateVisual("box");
+  VisualPtr box = _scene->CreateVisual("box1");
   box->AddGeometry(_scene->CreateBox());
   box->SetOrigin(0.0, 0.5, 0.0);
   box->SetLocalPosition(3, 0, 0);
@@ -91,6 +91,66 @@ void buildScene(ScenePtr _scene)
   box->SetLocalScale(1, 2.5, 1);
   box->SetMaterial(blue);
   root->AddChild(box);
+
+  {
+    // create box visual
+    VisualPtr box = _scene->CreateVisual("box2");
+    box->AddGeometry(_scene->CreateBox());
+    box->SetOrigin(0.0, 0.5, 0.0);
+    box->SetLocalPosition(-3, 0, 0);
+    box->SetLocalRotation(IGN_PI / 4, 0, IGN_PI / 3);
+    box->SetLocalScale(1, 2.5, 1);
+    box->SetMaterial(blue);
+    root->AddChild(box);
+  }
+
+  {
+    // create box visual
+    VisualPtr box = _scene->CreateVisual("box3");
+    box->AddGeometry(_scene->CreateBox());
+    box->SetOrigin(0.0, 0.5, 0.0);
+    box->SetLocalPosition(0, 3, 0);
+    box->SetLocalRotation(IGN_PI / 4, 0, IGN_PI / 3);
+    box->SetLocalScale(1, 2.5, 1);
+    box->SetMaterial(blue);
+    root->AddChild(box);
+  }
+
+  {
+    // create box visual
+    VisualPtr box = _scene->CreateVisual("box4");
+    box->AddGeometry(_scene->CreateBox());
+    box->SetOrigin(0.0, 0.5, 0.0);
+    box->SetLocalPosition(0, -3, 0);
+    box->SetLocalRotation(IGN_PI / 4, 0, IGN_PI / 3);
+    box->SetLocalScale(1, 2.5, 1);
+    box->SetMaterial(blue);
+    root->AddChild(box);
+  }
+
+  {
+    // create box visual
+    VisualPtr box = _scene->CreateVisual("box5");
+    box->AddGeometry(_scene->CreateBox());
+    box->SetOrigin(0.0, 0.5, 0.0);
+    box->SetLocalPosition(0, 0, 3);
+    box->SetLocalRotation(IGN_PI / 4, 0, IGN_PI / 3);
+    box->SetLocalScale(1, 2.5, 1);
+    box->SetMaterial(blue);
+    root->AddChild(box);
+  }
+
+  {
+    // create box visual
+    VisualPtr box = _scene->CreateVisual("box6");
+    box->AddGeometry(_scene->CreateBox());
+    box->SetOrigin(0.0, 0.5, 0.0);
+    box->SetLocalPosition(0, 0, -3);
+    box->SetLocalRotation(IGN_PI / 4, 0, IGN_PI / 3);
+    box->SetLocalScale(1, 2.5, 1);
+    box->SetMaterial(blue);
+    root->AddChild(box);
+  }
 
   // create camera
   CameraPtr camera = _scene->CreateCamera("camera");
@@ -130,8 +190,8 @@ int main(int _argc, char** _argv)
   std::vector<std::string> engineNames;
   std::vector<CameraPtr> cameras;
 
-  engineNames.push_back("ogre");
-  engineNames.push_back("optix");
+  engineNames.push_back("ogre2");
+  // engineNames.push_back("optix");
 
   for (auto engineName : engineNames)
   {

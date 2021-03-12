@@ -106,7 +106,7 @@ namespace ignition
       public: void SetMaterial(MaterialPtr _material);
 
       /// \brief Get a pointer to the ogre render target
-      public: virtual Ogre::RenderTarget *RenderTarget() const = 0;
+      public: virtual Ogre::TextureGpu *RenderTarget() const = 0;
 
       /// \brief Get visibility mask for the viewport associated with this
       /// render target
@@ -183,6 +183,7 @@ namespace ignition
       /// \brief Ogre's compositor workspace - the main interface to render
       /// into a render target or render texture.
       protected: Ogre::CompositorWorkspace *ogreCompositorWorkspace = nullptr;
+      protected: Ogre::CompositorWorkspace *ogreCompositorWorkspace2 = nullptr;
 
       /// \brief Ogre's compositor workspace definition name
       protected: std::string ogreCompositorWorkspaceDefName;
@@ -239,7 +240,7 @@ namespace ignition
       public: virtual unsigned int GLId() const override;
 
       // Documentation inherited.
-      public: virtual Ogre::RenderTarget *RenderTarget() const override;
+      public: virtual Ogre::TextureGpu *RenderTarget() const override;
 
       // Documentation inherited.
       protected: virtual void RebuildTarget() override;
@@ -250,8 +251,10 @@ namespace ignition
       /// \brief Build the render texture
       protected: virtual void BuildTarget();
 
+      protected: Ogre::CompositorManager2 *compositorManager;
+
       /// \brief Pointer to the internal ogre render texture object
-      protected: Ogre::Texture *ogreTexture = nullptr;
+      protected: Ogre::TextureGpu *ogreTexture = nullptr;
 
       /// \brief Make scene our friend so it can create a ogre2 render texture
       private: friend class Ogre2Scene;
@@ -271,7 +274,7 @@ namespace ignition
       public: virtual void Destroy() override;
 
       // Documentation inherited.
-      public: virtual Ogre::RenderTarget *RenderTarget() const override;
+      public: virtual Ogre::TextureGpu *RenderTarget() const override;
 
       // Documentation inherited.
       protected: virtual void RebuildTarget() override;
@@ -280,7 +283,7 @@ namespace ignition
       protected: virtual void BuildTarget();
 
       /// \brief Pointer to the internal ogre render target object
-      protected: Ogre::RenderTarget *ogreRenderWindow = nullptr;
+      protected: Ogre::TextureGpu *ogreRenderWindow = nullptr;
 
       /// \brief Make scene our friend so it can create a ogre2 render window
       private: friend class Ogre2Scene;

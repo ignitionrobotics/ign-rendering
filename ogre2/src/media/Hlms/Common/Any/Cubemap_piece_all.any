@@ -10,6 +10,7 @@ struct CubemapProbe
 	float4 row2_centerZ;
 	float4 halfSize;
 	float4 cubemapPosLS;
+	float4 cubemapPosVS;
 };
 @end
 
@@ -25,20 +26,16 @@ struct CubemapProbe
 \return
 	Parallax-Corrected reflection dir, IN LOCAL SPACE (local to probe's).
 	Unlike the inputs, this vector is LEFT HANDED.
+
+	The w component contains the distance from pos to intersection walking across reflDir
 */
-@property( syntax == metal )inline @end float3 localCorrect( float3 reflDir, float3 posLS,
-															 CubemapProbe probe )
+INLINE float4 localCorrect( float3 reflDir, float3 posLS, CubemapProbe probe )
 {
 	float3 probeShapeHalfSize	= probe.halfSize.xyz;
-	float3x3 viewSpaceToProbeLocal = float3x3( probe.row0_centerX.xyz,
-											   probe.row1_centerY.xyz,
-											   probe.row2_centerZ.xyz );
-
-	@property( syntax == hlsl )
-		float3 reflDirLS = mul( viewSpaceToProbeLocal, reflDir );
-	@end @property( syntax != hlsl )
-		float3 reflDirLS = reflDir * viewSpaceToProbeLocal;
-	@end
+	float3x3 viewSpaceToProbeLocal = buildFloat3x3( probe.row0_centerX.xyz,
+													probe.row1_centerY.xyz,
+													probe.row2_centerZ.xyz );
+	float3 reflDirLS = mul( reflDir, viewSpaceToProbeLocal );
 
 	//Find the ray intersection with box plane
 	float3 invReflDirLS = float3( 1.0, 1.0, 1.0 ) / reflDirLS;
@@ -55,8 +52,9 @@ struct CubemapProbe
 
 	//Make it left-handed.
 	localCorrectedVec.z = -localCorrectedVec.z;
-	return localCorrectedVec;
+	return float4( localCorrectedVec, distance );
 }
+
 /** Converts a position from view space to probe's local space.
 \param pos
 	Position of the object where the reflection is going to reflect, in view space
@@ -100,10 +98,18 @@ struct CubemapProbe
 	float3 vDiff = ( probe.halfSize.xyz - abs( posLS.xyz ) ) / probe.halfSize.xyz;
 	return min( min( vDiff.x, vDiff.y ), vDiff.z );
 }
-@end
 
-//float3 main( float3 reflDir : TEXCOORD0, float3 pos : TEXCOORD1 ) : SV_Target0
-//{
-//	return localCorrect( reflDir, pos, probe );
-//}
-@end
+INLINE float getProbeNDF( float3 posLS, float3 probeToAreaCenterOffsetLS,
+						  float3 innerRange, float3 outerRange )
+{
+	float3 areaPosLS = posLS.xyz - probeToAreaCenterOffsetLS.xyz;
+	//float3 areaPosLS = posLS.xyz - float3( 0, 0, -5 );
+	float3 dist = abs( areaPosLS.xyz );
+	//1e-6f avoids division by zero.
+	float3 ndf = (dist - innerRange) / (outerRange - innerRange + 1e-6f);
+
+	return max3( ndf.x, ndf.y, ndf.z );
+}
+
+@end /// DeclParallaxLocalCorrect
+@end /// parallax_correct_cubemaps

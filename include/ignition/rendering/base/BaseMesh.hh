@@ -89,10 +89,10 @@ namespace ignition
       public: virtual MaterialPtr Material() const override;
 
       public: virtual void SetMaterial(const std::string &_name,
-                  bool _unique = true) override;
+                  bool _unique = false) override;
 
       public: virtual void SetMaterial(MaterialPtr _material,
-                  bool _unique = true) override;
+                  bool _unique = false) override;
 
       public: virtual void PreRender() override;
 

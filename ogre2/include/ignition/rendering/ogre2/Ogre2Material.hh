@@ -232,7 +232,7 @@ namespace ignition
 
       /// \brief Get a pointer to the ogre texture by name
       /// \return Ogre texture
-      protected: virtual Ogre::TexturePtr Texture(const std::string &_name);
+      protected: virtual Ogre::TextureGpu *Texture(const std::string &_name);
 
       /// \brief Updates the material transparency in the engine,
       /// based on transparency and diffuse alpha values

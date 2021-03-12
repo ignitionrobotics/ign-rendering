@@ -20,7 +20,7 @@ set(GTEST_MAIN_LIBRARY "${PROJECT_BINARY_DIR}/test/libgtest_main.a")
 execute_process(COMMAND cmake -E remove_directory ${CMAKE_BINARY_DIR}/test_results)
 execute_process(COMMAND cmake -E make_directory ${CMAKE_BINARY_DIR}/test_results)
 include_directories(${GTEST_INCLUDE_DIRS})
-
-add_subdirectory(integration)
-add_subdirectory(performance)
-add_subdirectory(regression)
+#
+# add_subdirectory(integration)
+# add_subdirectory(performance)
+# add_subdirectory(regression)

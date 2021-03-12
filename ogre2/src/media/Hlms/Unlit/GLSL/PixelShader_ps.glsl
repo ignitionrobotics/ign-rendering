@@ -43,7 +43,7 @@ void main()
 {
 	@insertpiece( custom_ps_preExecution )
 @property( diffuse_map || alpha_test || diffuse )
-	uint materialId	= instance.worldMaterialIdx[inPs.drawId].x;
+	uint materialId	= worldMaterialIdx[inPs.drawId].x;
 	material = materialArray.m[materialId];
 @end
 	@insertpiece( custom_ps_posMaterialLoad )
@@ -70,7 +70,7 @@ void main()
 
 	@insertpiece( custom_ps_preLights )
 
-@property( alpha_test )
+@property( alpha_test && !alpha_test_shadow_caster_only )
 	if( material.alpha_test_threshold.x @insertpiece( alpha_test_cmp_func ) outColour.a )
 		discard;@end
 

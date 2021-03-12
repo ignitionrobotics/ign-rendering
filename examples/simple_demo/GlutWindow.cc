@@ -81,7 +81,7 @@ void updateCameras()
     camera->SetLocalPosition(x, y, 0.0);
   }
 
-  g_offset += 0.0005;
+  g_offset += 0.01;
 }
 //! [update camera]
 

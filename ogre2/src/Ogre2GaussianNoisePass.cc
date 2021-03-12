@@ -162,7 +162,7 @@ void Ogre2GaussianNoisePass::CreateRenderPass()
         static_cast<Ogre::CompositorPassQuadDef *>(
         inputTargetDef->addPass(Ogre::PASS_QUAD));
     passQuad->mMaterialName = materialName;
-    passQuad->addQuadTextureSource(0, "rt_input", 0);
+    passQuad->addQuadTextureSource(0, "rt_input");
   }
   nodeDef->mapOutputChannel(0, "rt_output");
   nodeDef->mapOutputChannel(1, "rt_input");

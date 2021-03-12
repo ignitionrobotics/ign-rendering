@@ -96,10 +96,10 @@ namespace ignition
       /// \brief Ign-rendering PixelFormat to Ogre PixelFormat
       /// \param[in] _v Ign-rendering PixelFormat
       /// return Ogre PixelFormat
-      public: static Ogre::PixelFormat Convert(PixelFormat _format);
+      public: static Ogre::PixelFormatGpu Convert(PixelFormat _format);
 
       /// \brief A list of ogre pixel formats
-      private: static const Ogre::PixelFormat ogrePixelFormats[PF_COUNT];
+      private: static const Ogre::PixelFormatGpu ogrePixelFormats[PF_COUNT];
     };
     /// \}
     }

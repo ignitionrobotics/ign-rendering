@@ -32,6 +32,8 @@
 #include "ignition/rendering/ogre2/Ogre2RenderEngine.hh"
 #include "ignition/rendering/ogre2/Ogre2Scene.hh"
 
+#include "Vao/OgreVaoManager.h"
+
 /// \brief Private implementation
 class ignition::rendering::Ogre2DynamicRenderablePrivate
 {

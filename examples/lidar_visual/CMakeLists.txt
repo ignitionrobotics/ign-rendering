@@ -32,3 +32,8 @@ target_link_libraries(lidar_visual
   ${GLEW_LIBRARIES}
   ${IGNITION-RENDERING_LIBRARIES}
 )
+
+add_custom_command(TARGET lidar_visual POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+  ${CMAKE_SOURCE_DIR}/media
+  $<TARGET_FILE_DIR:lidar_visual>/media)
