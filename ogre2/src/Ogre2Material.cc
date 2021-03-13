@@ -157,17 +157,16 @@ void Ogre2Material::SetAlphaFromTexture(bool _enabled,
     double _alpha, bool _twoSided)
 {
   BaseMaterial::SetAlphaFromTexture(_enabled, _alpha, _twoSided);
-  Ogre::HlmsBlendblock block;
   if (_enabled)
   {
     this->ogreDatablock->setAlphaTest(Ogre::CMPF_GREATER_EQUAL);
+    Ogre::HlmsBlendblock block;
     block.setBlendType(Ogre::SBT_TRANSPARENT_ALPHA);
     this->ogreDatablock->setBlendblock(block);
   }
   else
   {
     this->ogreDatablock->setAlphaTest(Ogre::CMPF_ALWAYS_PASS);
-    this->ogreDatablock->setBlendblock(block);
   }
   this->ogreDatablock->setAlphaTestThreshold(_alpha);
   this->ogreDatablock->setTwoSidedLighting(_twoSided);
