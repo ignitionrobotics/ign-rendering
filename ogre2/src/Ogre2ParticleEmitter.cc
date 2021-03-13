@@ -479,6 +479,9 @@ void Ogre2ParticleEmitter::CreateParticleSystem()
 {
   // Instantiate the particle system and default parameters.
   this->dataPtr->ps = this->scene->OgreSceneManager()->createParticleSystem();
+  this->dataPtr->ps->getUserObjectBindings().setUserAny(
+      Ogre::Any(this->Id()));
+
   this->dataPtr->ps->setCullIndividually(true);
   this->dataPtr->ps->setParticleQuota(500);
   this->dataPtr->ps->setSortingEnabled(true);

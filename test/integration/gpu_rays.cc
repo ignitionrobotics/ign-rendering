@@ -484,7 +484,7 @@ void GpuRaysTest::RaysParticles(const std::string &_renderEngine)
 
   const double hMinAngle = -IGN_PI / 2.0;
   const double hMaxAngle = IGN_PI / 2.0;
-  const double minRange = 0.1;
+  const double minRange = 0.12;
   const double maxRange = 10.0;
   const int hRayCount = 320;
   const int vRayCount = 1;
@@ -550,15 +550,18 @@ void GpuRaysTest::RaysParticles(const std::string &_renderEngine)
 
   // create particle emitter between sensor and box in the center
   ignition::math::Vector3d particlePosition(1.0, 0, 0);
+  ignition::math::Quaterniond particleRotation(
+      ignition::math::Vector3d(0, -1.57, 0));
   ignition::math::Vector3d particleSize(0.2, 0.2, 0.2);
   ignition::rendering::ParticleEmitterPtr emitter =
       scene->CreateParticleEmitter();
   emitter->SetLocalPosition(particlePosition);
+  emitter->SetLocalRotation(particleRotation);
   emitter->SetParticleSize(particleSize);
   emitter->SetRate(100);
   emitter->SetLifetime(2);
   emitter->SetVelocityRange(0.1, 0.1);
-  emitter->SetScaleRate(0.1);
+  emitter->SetScaleRate(0.0);
   emitter->SetColorRange(ignition::math::Color::Red,
       ignition::math::Color::Black);
   emitter->SetEmitting(true);
@@ -620,6 +623,49 @@ void GpuRaysTest::RaysParticles(const std::string &_renderEngine)
   EXPECT_GT(particleHitCount, 0u);
   // there should be at least one miss
   EXPECT_GT(particleMissCount, 0u);
+
+
+  // test setting particle scatter ratio
+  // reduce particle scatter ratio - this creates a "less dense" particle
+  // emitter so we should have larger range values on avg since fewer
+  // rays are occluded by particles
+  emitter->SetUserData("particle_scatter_ratio", 0.1);
+
+  unsigned int particleHitLowScatterCount = 0u;
+  unsigned int particleMissLowScatterCount = 0u;
+  for (unsigned int i = 0u; i < 100u; ++i)
+  {
+    gpuRays->Update();
+
+    // sensor should see ether a particle or box01
+    double particleRange = static_cast<double>(scan[mid]);
+    bool particleHit = ignition::math::equal(
+        expectedParticleRange, particleRange, laserNoiseTol);
+    bool particleMiss = ignition::math::equal(
+        expectedRangeAtMidPointBox1, particleRange, LASER_TOL);
+    EXPECT_TRUE(particleHit || particleMiss)
+        << "actual vs expected particle range: "
+        << particleRange << " vs " << expectedParticleRange;
+
+    particleHitLowScatterCount += particleHit ? 1u : 0u;
+    particleMissLowScatterCount += particleMiss ? 1u : 0u;
+
+    // sensor should see box02 without noise or scatter effect
+    EXPECT_NEAR(expectedRangeAtMidPointBox2, scan[0], LASER_TOL);
+
+    // sensor should not see box03 as it is out of range
+    EXPECT_DOUBLE_EQ(ignition::math::INF_D, scan[last]);
+  }
+
+  // there should be at least one hit
+  EXPECT_GT(particleHitLowScatterCount, 0u);
+  // there should be at least one miss
+  EXPECT_GT(particleMissLowScatterCount, 0u);
+
+  // there should be more misses than the previous particle emitter setting
+  // i.e. more rays missing the particles because of low scatter ratio / density
+  EXPECT_GT(particleHitCount, particleHitLowScatterCount);
+  EXPECT_LT(particleMissCount, particleMissLowScatterCount);
 
   c.reset();
 

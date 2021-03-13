@@ -169,10 +169,6 @@ class ignition::rendering::Ogre2GpuRaysPrivate
   /// \brief standard deviation of particle noise
   public: double particleStddev = 0.01;
 
-  /// \brief Particle scatter ratio. This is used to determine the ratio of
-  /// particles that will detected by the depth camera
-  public: double particleScatterRatio = 0.65;
-
   /// \brief Listener for setting particle noise value based on particle
   /// emitter region
   public: std::unique_ptr<Ogre2ParticleNoiseListener> particleNoiseListener[6];
@@ -623,8 +619,6 @@ void Ogre2GpuRays::Setup1stPass()
       static_cast<float>(this->dataMinVal));
   psParams->setNamedConstant("particleStddev",
     static_cast<float>(this->dataPtr->particleStddev));
-  psParams->setNamedConstant("particleScatterRatio",
-    static_cast<float>(this->dataPtr->particleScatterRatio));
 
   // Create 1st pass compositor
   auto engine = Ogre2RenderEngine::Instance();

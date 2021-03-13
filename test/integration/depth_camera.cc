@@ -598,15 +598,18 @@ void DepthCameraTest::DepthCameraParticles(
 
     // create particle emitter between depth camera and box
     ignition::math::Vector3d particlePosition(1.0, 0, 0);
+    ignition::math::Quaterniond particleRotation(
+        ignition::math::Vector3d(0, -1.57, 0));
     ignition::math::Vector3d particleSize(0.2, 0.2, 0.2);
     ignition::rendering::ParticleEmitterPtr emitter =
         scene->CreateParticleEmitter();
     emitter->SetLocalPosition(particlePosition);
+    emitter->SetLocalRotation(particleRotation);
     emitter->SetParticleSize(particleSize);
     emitter->SetRate(100);
     emitter->SetLifetime(2);
     emitter->SetVelocityRange(0.1, 0.1);
-    emitter->SetScaleRate(0.1);
+    emitter->SetScaleRate(0.0);
     emitter->SetColorRange(ignition::math::Color::Red,
         ignition::math::Color::Black);
     emitter->SetEmitting(true);
@@ -677,6 +680,69 @@ void DepthCameraTest::DepthCameraParticles(
     depthParticleAvg /= pixelCount;
     EXPECT_LT(pointParticleAvg, pointAvg);
     EXPECT_LT(depthParticleAvg, depthAvg);
+
+    // test setting particle scatter ratio
+    // reduce particle scatter ratio - this creates a "less dense" particle
+    // emitter so we should have larger depth values on avg since fewers
+    // depth readings are occluded by particles
+    emitter->SetUserData("particle_scatter_ratio", 0.1);
+
+    g_depthCounter = 0u;
+    g_pointCloudCounter = 0u;
+    for (unsigned int i = 0; i < 100; ++i)
+    {
+      depthCamera->Update();
+    }
+    EXPECT_EQ(100u, g_depthCounter);
+    EXPECT_EQ(100u, g_pointCloudCounter);
+
+    double pointParticleLowScatterAvg = 0.0;
+    double depthParticleLowScatterAvg = 0.0;
+
+    // Verify depth and point cloud data after setting particle scatter ratio
+    for (unsigned int i = 0u; i < depthCamera->ImageHeight(); ++i)
+    {
+      unsigned int step =
+          i * depthCamera->ImageWidth() * pointCloudChannelCount;
+      for (unsigned int j = 0u; j < depthCamera->ImageWidth(); ++j)
+      {
+        float x = pointCloudData[step + j * pointCloudChannelCount];
+        float y = pointCloudData[step + j * pointCloudChannelCount + 1];
+        float z = pointCloudData[step + j * pointCloudChannelCount + 2];
+
+        double xd = static_cast<double>(x);
+        // depth camera sees only certain percentage of particles
+        // so the values should be either
+        //   * box depth (depth camera does not see particles), or
+        //   * noisy particle depth (depth camera see particles but values
+        //     are affected by noise)
+        EXPECT_TRUE(
+            ignition::math::equal(expectedParticleDepth, xd, depthNoiseTol) ||
+            ignition::math::equal(expectedDepth, xd, DEPTH_TOL))
+            << "actual vs expected particle depth: "
+            << xd << " vs " << expectedParticleDepth;
+        float depth = scan[i * depthCamera->ImageWidth() + j];
+        double depthd = static_cast<double>(depth);
+        EXPECT_TRUE(
+            ignition::math::equal(expectedParticleDepth, depthd, depthNoiseTol)
+            || ignition::math::equal(expectedDepth, depthd, DEPTH_TOL))
+            << "actual vs expected particle depth: "
+            << depthd << " vs " << expectedParticleDepth;
+
+        pointParticleLowScatterAvg +=
+            ignition::math::Vector3d(x, y, z).Length();
+        depthParticleLowScatterAvg += depthd;
+      }
+    }
+
+    // compare point and depth data before and after setting particle scatter
+    // ratio. The avg point length and depth values in the image with low
+    // particle scatter ratio should be should be higher than the previous
+    // images with particle effects
+    pointParticleLowScatterAvg /= pixelCount;
+    depthParticleLowScatterAvg /= pixelCount;
+    EXPECT_LT(pointParticleAvg, pointParticleLowScatterAvg);
+    EXPECT_LT(depthParticleAvg, depthParticleLowScatterAvg);
 
     // Clean up
     connection.reset();

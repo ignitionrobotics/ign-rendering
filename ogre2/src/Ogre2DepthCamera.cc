@@ -134,10 +134,6 @@ class ignition::rendering::Ogre2DepthCameraPrivate
   /// \brief standard deviation of particle noise
   public: double particleStddev = 0.01;
 
-  /// \brief Particle scatter ratio. This is used to determine the ratio of
-  /// particles that will detected by the depth camera
-  public: double particleScatterRatio = 0.65;
-
   /// \brief Listener for setting particle noise value based on particle
   /// emitter region
   public: std::unique_ptr<Ogre2ParticleNoiseListener> particleNoiseListener;
@@ -436,8 +432,6 @@ void Ogre2DepthCamera::CreateDepthTexture()
   psParams->setNamedConstant("backgroundColor", bg);
   psParams->setNamedConstant("particleStddev",
     static_cast<float>(this->dataPtr->particleStddev));
-  psParams->setNamedConstant("particleScatterRatio",
-    static_cast<float>(this->dataPtr->particleScatterRatio));
 
   std::string matDepthFinalName = "DepthCameraFinal";
   Ogre::MaterialPtr matDepthFinal =

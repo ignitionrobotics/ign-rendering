@@ -40,9 +40,24 @@ namespace ignition
       private: virtual void preRenderTargetUpdate(
           const Ogre::RenderTargetEvent &_evt) override;
 
+      /// \brief Pointer to scene
       private: Ogre2ScenePtr scene;
+
+      /// \brief Pointer to camera
       private: Ogre::Camera *ogreCamera = nullptr;
+
+      /// \brief Pointer to ogre matieral with shaders for applying particle
+      /// scattering effect to sensors
       private: Ogre::MaterialPtr ogreMaterial;
+
+      /// \brief Particle scatter ratio. This is used to determine the ratio of
+      /// particles that will be detected by sensors. Increasing the ratio
+      /// increases the scatter of the particles, which means there is a higher
+      /// chance of particles reflecting and interfering with depth sensing,
+      /// making the emitter appear more dense. Decreasing the ratio decreases
+      /// the scatter of the particles, making it appear less dense. This value
+      /// should be > 0.
+      private: float particleScatterRatio = 0.65f;
     };
     }
   }

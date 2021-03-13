@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Open Source Robotics Foundation
+ * Copyright (C) 2021 Open Source Robotics Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,12 @@
  *
  */
 
+#include <string>
+
 #include "ignition/rendering/ogre2/Ogre2Includes.hh"
 #include "ignition/rendering/ogre2/Ogre2RenderTypes.hh"
 #include "ignition/rendering/ogre2/Ogre2Scene.hh"
+#include "ignition/rendering/ogre2/Ogre2Visual.hh"
 
 #include "Ogre2ParticleNoiseListener.hh"
 
@@ -82,6 +85,65 @@ void Ogre2ParticleNoiseListener::preRenderTargetUpdate(
           pass->getFragmentProgramParameters();
       psParams->setNamedConstant("particleStddev",
           static_cast<float>(particleStddev));
+
+      // get particle scatter ratio value from particle emitter user data
+      // and pass that to the shaders
+      Ogre::Any userAny = ps->getUserObjectBindings().getUserAny();
+      if (!userAny.isEmpty() && userAny.getType() == typeid(unsigned int))
+      {
+        VisualPtr result;
+        try
+        {
+          result = this->scene->VisualById(
+              Ogre::any_cast<unsigned int>(userAny));
+        }
+        catch(Ogre::Exception &e)
+        {
+          ignerr << "Ogre Error:" << e.getFullDescription() << "\n";
+        }
+        Ogre2VisualPtr ogreVisual =
+            std::dynamic_pointer_cast<Ogre2Visual>(result);
+        if (ogreVisual)
+        {
+          const std::string particleScatterRatioKey = "particle_scatter_ratio";
+          Variant particleScatterRatioAny =
+              ogreVisual->UserData(particleScatterRatioKey);
+          if (particleScatterRatioAny.index() != std::variant_npos)
+          {
+            float ratio = -1.0;
+            try
+            {
+              ratio = std::get<float>(particleScatterRatioAny);
+            }
+            catch(...)
+            {
+              try
+              {
+                ratio = std::get<double>(particleScatterRatioAny);
+              }
+              catch(...)
+              {
+                try
+                {
+                  ratio = std::get<int>(particleScatterRatioAny);
+                }
+                catch(std::bad_variant_access &e)
+                {
+                  ignerr << "Error casting user data: " << e.what() << "\n";
+                  ratio = -1.0;
+                }
+              }
+            }
+            if (ratio > 0)
+            {
+              this->particleScatterRatio = ratio;
+            }
+          }
+        }
+      }
+      psParams->setNamedConstant("particleScatterRatio",
+          static_cast<float>(this->particleScatterRatio));
+
       return;
     }
     itor.moveNext();
